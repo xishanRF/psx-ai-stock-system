@@ -14,8 +14,6 @@ HEADERS = {
     "Accept": "application/json"
 }
 
-WATCHLIST = ["FFC", "MCB", "OGDC", "MARI", "SYS"]
-
 def main():
     response = requests.get(URL, headers=HEADERS, timeout=30)
     response.raise_for_status()
@@ -28,30 +26,21 @@ def main():
     rows = []
 
     for item in payload.get("data", []):
-        market_type = item.get("m")
-        symbol = item.get("s")
-        price = item.get("c")
-
-        if market_type != "REG":
-            continue
-
-        if symbol not in WATCHLIST:
+        if item.get("m") != "REG":
             continue
 
         rows.append({
-            "symbol": symbol,
-            "price": price,
+            "symbol": item.get("s"),
+            "price": item.get("c"),
             "volume": None
         })
 
     if not rows:
-        raise Exception("No matching watchlist symbols found in API response")
+        raise Exception("No REG tickers returned")
 
     supabase.table("prices_daily").insert(rows).execute()
 
-    print("Inserted rows into prices_daily:")
-    for row in rows:
-        print(row)
+    print(f"Inserted {len(rows)} rows into prices_daily")
 
 if __name__ == "__main__":
     main()
